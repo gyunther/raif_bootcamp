@@ -1,0 +1,28 @@
+- name: Upgrade all packages
+  ansible.builtin.yum:
+    name: '*'
+    state: latest
+    exclude:
+      - httpd*
+      - mod_http2*
+  register: result
+- name: reboot if changed
+  reboot:
+  when: result is changed
+- name: get installed kernel
+  ansible.builtin.yum:
+    list: kernel
+  register: result
+- ansible.builtin.set_fact: 
+    kernel_versions: []
+- name: set_versions
+  loop: "{{result | community.general.json_query('results[?yumstate==`installed`]')}}"
+  ansible.builtin.set_fact:
+    kernel_versions: "{{(kernel_versions + [item.version + '-' + item.release])  | sort}}"
+- name: Remove kernel
+  loop: "{{range(kernel_versions|length - 2)}}"
+  ansible.builtin.yum:
+    name:  kernel-{{kernel_versions[item]}}
+    state: absent
+
+  

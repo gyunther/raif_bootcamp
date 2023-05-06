@@ -1,0 +1,5 @@
+- name: update and reboot centos
+  hosts: servers
+  roles:
+   - update_centos
+   
